@@ -24,12 +24,12 @@ object Sol_12 extends App with SolInput {
     (newStr, newIdx)
   }
 
-  val iter1 = Iterator.iterate((init, 0)) (nextStep _ tupled)
+  val iter1 = Iterator.iterate((init, 0)) (nextStep _  tupled)
 
   val (part1str, part1idx) = iter1.drop(part1Generations).next
 
   var res1 = calcSum(part1str, part1idx)
-  println(res1)
+  println(res1) //6201
 
   val part2Generations = 50000000000L
 
@@ -48,5 +48,5 @@ object Sol_12 extends App with SolInput {
   val diffscore = calcSum(stableStr, stableIdx + 1) - curSum
 
   val res2 = curSum + (part2Generations - stableStep + 1) * diffscore
-  println(res2)
+  println(res2) //9300000001023
 }
