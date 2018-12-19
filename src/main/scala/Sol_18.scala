@@ -100,6 +100,54 @@ object Sol_18 extends App{
     }
   }
 
+  object BrentSolution extends Solution {
+    /**
+      * https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_Tortoise_and_Hare
+      */
+    def brent[A](x0: A, f: A => A): (Int, Int) = {
+      var power = 1
+      var λ = 1
+      var tortoise = x0
+      var hare = f(x0)
+      while (tortoise != hare) {
+        if (power == λ)
+          {
+            tortoise = hare
+            power *= 2
+            λ = 0
+          }
+        hare = f(hare)
+        λ += 1
+      }
+
+      var μ = 0
+      tortoise = x0
+      hare = x0
+      for (_ <- Range(0,λ))
+        {
+          hare = f(hare)
+        }
+
+      while (tortoise != hare) {
+        tortoise = f(tortoise)
+        hare = f(hare)
+        μ += 1
+      }
+
+      (μ, λ)
+    }
+
+    override def reallocCycleCount(initialMemory: Memory): Int = {
+      val (μ, λ) = brent(initialMemory, reallocCycle)
+      μ + λ
+    }
+
+    override def reallocCycleLoop(initialMemory: Memory): Int = {
+      val (μ, λ) = brent(initialMemory, reallocCycle)
+      λ
+    }
+  }
+
   def reallocCycle(memory: Memory): Memory = {
     val (max, maxIndex) = memory.view.zipWithIndex.maxBy(_._1)
     val d = max / memory.size
@@ -133,20 +181,6 @@ object Sol_18 extends App{
   }
 
   def step(grid: Grid[Char]): Grid[Char] = {
-    /*val paddingRow = Vector.fill(grid(0).size + 2)('.')
-    val paddedGrid: Grid[Char] = paddingRow +: grid.map('.' +: _ :+ '.') :+ paddingRow
-    def stepTile(grid: Grid[Char]): Char = {
-      val neighbors = (grid(0) ++ Vector(grid(1)(0), grid(1)(2)) ++ grid(2)).groupBy(c => c).mapValues(_.length).withDefaultValue(0)
-      grid(1)(1) match {
-        case '.' if neighbors('|') >= 3 => '|'
-        case '|' if neighbors('#') >= 3 => '#'
-        case '#' if neighbors('|') >= 1 && neighbors('#') >= 1 => '#'
-        case '#' => '.'
-        case c => c
-      }
-    }
-    paddedGrid.slidingGrid(3).map(_.map(stepTile).toVector).toVector*/
-
     (for ((row, y) <- grid.zipWithIndex.par)
       yield for ((cell, x) <- row.zipWithIndex)
         yield {
@@ -177,7 +211,8 @@ object Sol_18 extends App{
   }
 
   def resourceValueCycle(grid: Grid[Char], after: Int = 1000000000): Int = {
-    val (mu, lambda) = FloydSolution.floyd(grid, step)
+    //val (mu, lambda) = FloydSolution.floyd(grid, step)
+    val (mu, lambda) = BrentSolution.brent(grid, step)
     val afterMu = (after - mu) % lambda
     resourceValueIterate(grid, mu + afterMu)
   }
